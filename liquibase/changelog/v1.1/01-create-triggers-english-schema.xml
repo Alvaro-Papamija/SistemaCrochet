@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="1.1-triggers-orders-historico-01" author="marana-dev">
+        <comment>Trigger automático: Registrar cambios de estado en tabla orders en el histórico</comment>
+        <sql endDelimiter="//">
+            DROP TRIGGER IF EXISTS `marana_crochet`.`trg_orders_historico_update`//
+            CREATE TRIGGER `marana_crochet`.`trg_orders_historico_update`
+            AFTER UPDATE ON `marana_crochet`.`orders`
+            FOR EACH ROW
+            BEGIN
+                IF (OLD.status &lt;&gt; NEW.status) THEN
+                    INSERT INTO `marana_crochet_historico`.`historico_pedidos`
+                        (`pedido_id`, `user_id`, `cliente_nombre`, `estado_anterior`, `estado_nuevo`, `estado_label`, `guia`, `transportista`, `motivo_cambio`, `origen_cambio`, `usuario_responsable`, `created_at`)
+                    VALUES
+                        (NEW.id, CAST(NEW.customerId AS CHAR), NEW.customerName, OLD.status, NEW.status, NEW.status, '', '',
+                         CONCAT('Transición de orden: ', OLD.status, ' -> ', NEW.status),
+                         'TRIGGER_BD', 'Trigger MySQL', NOW());
+                END IF;
+            END//
+        </sql>
+    </changeSet>
+
+    <changeSet id="1.1-triggers-products-stock-historico-02" author="marana-dev">
+        <comment>Trigger automático: Registrar movimientos de stock en tabla products en el histórico</comment>
+        <sql endDelimiter="//">
+            DROP TRIGGER IF EXISTS `marana_crochet`.`trg_products_stock_historico_update`//
+            CREATE TRIGGER `marana_crochet`.`trg_products_stock_historico_update`
+            AFTER UPDATE ON `marana_crochet`.`products`
+            FOR EACH ROW
+            BEGIN
+                IF (OLD.stock &lt;&gt; NEW.stock) THEN
+                    INSERT INTO `marana_crochet_historico`.`historico_inventario`
+                        (`sku`, `nombre_producto`, `stock_anterior`, `stock_nuevo`, `cantidad_movimiento`, `tipo_movimiento`, `referencia_id`, `nota_motivo`, `usuario_responsable`, `created_at`)
+                    VALUES
+                        (NEW.sku, NEW.name, OLD.stock, NEW.stock, (NEW.stock - OLD.stock),
+                         IF(NEW.stock &lt; OLD.stock, 'VENTA_O_CONSUMO', 'REPOSICION_O_AJUSTE'),
+                         NEW.sku, CONCAT('Stock actualizado: ', OLD.stock, ' a ', NEW.stock), 'Trigger MySQL', NOW());
+                END IF;
+            END//
+        </sql>
+    </changeSet>
+
+    <changeSet id="1.1-triggers-products-precios-historico-03" author="marana-dev">
+        <comment>Trigger automático: Registrar cambios de precios en tabla products en el histórico</comment>
+        <sql endDelimiter="//">
+            DROP TRIGGER IF EXISTS `marana_crochet`.`trg_products_precios_historico_update`//
+            CREATE TRIGGER `marana_crochet`.`trg_products_precios_historico_update`
+            AFTER UPDATE ON `marana_crochet`.`products`
+            FOR EACH ROW
+            BEGIN
+                IF (OLD.price &lt;&gt; NEW.price) THEN
+                    INSERT INTO `marana_crochet_historico`.`historico_precios`
+                        (`sku`, `nombre_producto`, `precio_anterior_cop`, `precio_nuevo_cop`, `costo_lana_anterior`, `costo_lana_nuevo`, `motivo`, `usuario_responsable`, `created_at`)
+                    VALUES
+                        (NEW.sku, NEW.name, OLD.price, NEW.price, 0, 0, 'Ajuste de precio en catálogo', 'Trigger MySQL', NOW());
+                END IF;
+            END//
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
+

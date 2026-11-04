@@ -32,14 +32,18 @@ if (-not (Test-Path "$Destination\vendor")) {
 if (-not (Test-Path "$Destination\php_app")) {
     New-Item -ItemType Directory -Path "$Destination\php_app" -Force | Out-Null
 }
+if (-not (Test-Path "$Destination\liquibase")) {
+    New-Item -ItemType Directory -Path "$Destination\liquibase" -Force | Out-Null
+}
 
-# 4. Copiar dist, api, vendor y php_app a htdocs/marana
+# 4. Copiar dist, api, vendor, php_app y liquibase a htdocs/marana
 Write-Host "[4/5] Copiando archivos de la aplicación y backend..." -ForegroundColor Yellow
 Copy-Item -Path "dist\*" -Destination $Destination -Recurse -Force
 Copy-Item -Path "api\*" -Destination "$Destination\api" -Recurse -Force
 Copy-Item -Path "vendor\*" -Destination "$Destination\vendor" -Recurse -Force
 Copy-Item -Path "php_app\*" -Destination "$Destination\php_app" -Recurse -Force
 Copy-Item -Path "php_app\*" -Destination $Destination -Recurse -Force
+Copy-Item -Path "liquibase\*" -Destination "$Destination\liquibase" -Recurse -Force
 Copy-Item -Path "composer.json" -Destination $Destination -Force
 
 # 5. Crear .htaccess para soporte de rutas SPA y APIs
@@ -60,6 +64,7 @@ Write-Host "   Frontend React/Vite:    http://localhost/marana" -ForegroundColor
 Write-Host "   API Diagnóstico PHP:    http://localhost/marana/api/status.php" -ForegroundColor Cyan
 Write-Host "   API Productos (JSON):   http://localhost/marana/api/products.php" -ForegroundColor White
 Write-Host "   Tienda PHP Nativa:      http://localhost/marana/php_app" -ForegroundColor White
-Write-Host "   Panel Taller (PHP 8.2): http://localhost/marana/php_app/admin/status.php" -ForegroundColor Cyan
+Write-Host "   Panel Taller (PHP 8.2): http://localhost/marana/php_app/admin/orders.php" -ForegroundColor Cyan
+Write-Host "   Histórico & Liquibase:  http://localhost/marana/php_app/admin/historico.php" -ForegroundColor Green
 Write-Host "   phpMyAdmin (MySQL):     http://localhost/phpmyadmin (BD: marana_crochet)" -ForegroundColor White
 Write-Host "==========================================" -ForegroundColor Green

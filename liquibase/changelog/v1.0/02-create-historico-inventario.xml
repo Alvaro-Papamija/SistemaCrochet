@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="1.0-inventario-historico-02" author="marana-dev">
+        <comment>Creación de tabla de histórico y movimientos de inventario/stock</comment>
+        <createTable tableName="historico_inventario">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="sku" type="VARCHAR(30)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="nombre_producto" type="VARCHAR(150)"/>
+            <column name="stock_anterior" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="stock_nuevo" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="cantidad_movimiento" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="tipo_movimiento" type="VARCHAR(40)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="referencia_id" type="VARCHAR(60)"/>
+            <column name="nota_motivo" type="VARCHAR(255)"/>
+            <column name="usuario_responsable" type="VARCHAR(120)" defaultValue="Sistema"/>
+            <column name="created_at" type="DATETIME" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="historico_inventario" indexName="idx_hist_inv_sku">
+            <column name="sku"/>
+        </createIndex>
+        <createIndex tableName="historico_inventario" indexName="idx_hist_inv_created_at">
+            <column name="created_at"/>
+        </createIndex>
+        <createIndex tableName="historico_inventario" indexName="idx_hist_inv_tipo">
+            <column name="tipo_movimiento"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>
+

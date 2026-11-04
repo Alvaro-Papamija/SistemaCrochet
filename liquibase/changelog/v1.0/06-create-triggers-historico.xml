@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="1.0-triggers-historico-pedidos-06" author="marana-dev">
+        <comment>Trigger automático: Registrar cambios de estado de pedidos en el histórico</comment>
+        <sql endDelimiter="//">
+            DROP TRIGGER IF EXISTS `marana_crochet`.`trg_pedidos_historico_update`//
+            CREATE TRIGGER `marana_crochet`.`trg_pedidos_historico_update`
+            AFTER UPDATE ON `marana_crochet`.`pedidos`
+            FOR EACH ROW
+            BEGIN
+                IF (OLD.estado &lt;&gt; NEW.estado OR OLD.guia &lt;&gt; NEW.guia OR OLD.pago_verificado &lt;&gt; NEW.pago_verificado) THEN
+                    INSERT INTO `marana_crochet_historico`.`historico_pedidos`
+                        (`pedido_id`, `user_id`, `cliente_nombre`, `estado_anterior`, `estado_nuevo`, `estado_label`, `guia`, `transportista`, `motivo_cambio`, `origen_cambio`, `usuario_responsable`, `created_at`)
+                    VALUES
+                        (NEW.id, NEW.user_id, NEW.cliente_nombre, OLD.estado, NEW.estado, NEW.estado_label, NEW.guia, NEW.transportista,
+                         CONCAT('Transición de estado: ', OLD.estado, ' -> ', NEW.estado),
+                         'TRIGGER_BD', 'Trigger MySQL', NOW());
+                END IF;
+            END//
+        </sql>
+    </changeSet>
+
+    <changeSet id="1.0-triggers-historico-stock-07" author="marana-dev">
+        <comment>Trigger automático: Registrar movimientos de inventario/stock en el histórico</comment>
+        <sql endDelimiter="//">
+            DROP TRIGGER IF EXISTS `marana_crochet`.`trg_stock_historico_update`//
+            CREATE TRIGGER `marana_crochet`.`trg_stock_historico_update`
+            AFTER UPDATE ON `marana_crochet`.`productos`
+            FOR EACH ROW
+            BEGIN
+                IF (OLD.stock_actual &lt;&gt; NEW.stock_actual) THEN
+                    INSERT INTO `marana_crochet_historico`.`historico_inventario`
+                        (`sku`, `nombre_producto`, `stock_anterior`, `stock_nuevo`, `cantidad_movimiento`, `tipo_movimiento`, `referencia_id`, `nota_motivo`, `usuario_responsable`, `created_at`)
+                    VALUES
+                        (NEW.sku, NEW.nombre, OLD.stock_actual, NEW.stock_actual, (NEW.stock_actual - OLD.stock_actual),
+                         IF(NEW.stock_actual &lt; OLD.stock_actual, 'VENTA_O_CONSUMO', 'REPOSICION_O_AJUSTE'),
+                         NEW.sku, CONCAT('Stock actualizado: ', OLD.stock_actual, ' a ', NEW.stock_actual), 'Trigger MySQL', NOW());
+                END IF;
+            END//
+        </sql>
+    </changeSet>
+
+    <changeSet id="1.0-triggers-historico-comprobantes-08" author="marana-dev">
+        <comment>Trigger automático: Registrar aprobación o rechazo de comprobantes</comment>
+        <sql endDelimiter="//">
+            DROP TRIGGER IF EXISTS `marana_crochet`.`trg_comprobantes_historico_update`//
+            CREATE TRIGGER `marana_crochet`.`trg_comprobantes_historico_update`
+            AFTER UPDATE ON `marana_crochet`.`comprobantes`
+            FOR EACH ROW
+            BEGIN
+                IF (OLD.estado &lt;&gt; NEW.estado) THEN
+                    INSERT INTO `marana_crochet_historico`.`historico_comprobantes`
+                        (`comprobante_id`, `pedido_id`, `cliente_nombre`, `estado_anterior`, `estado_nuevo`, `codigo_aprobacion`, `monto_total`, `metodo_pago`, `cuenta_banco`, `nota_interna`, `revisado_por`, `created_at`)
+                    VALUES
+                        (NEW.id, NEW.pedido_id, NEW.cliente_nombre, OLD.estado, NEW.estado, NEW.codigo_aprobacion, NEW.monto_total, NEW.metodo_pago, NEW.cuenta_banco, NEW.nota_interna, 'Trigger MySQL', NOW());
+                END IF;
+            END//
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
+

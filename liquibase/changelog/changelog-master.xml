@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!-- Version 1.0 - Creación de Base de Datos Histórica y Auditoría -->
+    <include file="v1.0/01-create-historico-pedidos.xml" relativeToChangelogFile="true"/>
+    <include file="v1.0/02-create-historico-inventario.xml" relativeToChangelogFile="true"/>
+    <include file="v1.0/03-create-historico-comprobantes.xml" relativeToChangelogFile="true"/>
+    <include file="v1.0/04-create-historico-precios.xml" relativeToChangelogFile="true"/>
+    <include file="v1.0/05-create-historico-auditoria-usuarios.xml" relativeToChangelogFile="true"/>
+    <include file="v1.0/06-create-triggers-historico.xml" relativeToChangelogFile="true"/>
+
+    <!-- Version 1.1 - Triggers de sincronización para órdenes y productos del catálogo -->
+    <include file="v1.1/01-create-triggers-english-schema.xml" relativeToChangelogFile="true"/>
+
+</databaseChangeLog>

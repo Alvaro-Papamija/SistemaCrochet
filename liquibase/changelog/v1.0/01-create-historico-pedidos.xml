@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="1.0-pedidos-historico-01" author="marana-dev">
+        <comment>Creación de tabla de histórico y auditoría para pedidos</comment>
+        <createTable tableName="historico_pedidos">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="pedido_id" type="VARCHAR(30)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="VARCHAR(36)"/>
+            <column name="cliente_nombre" type="VARCHAR(120)"/>
+            <column name="estado_anterior" type="VARCHAR(30)"/>
+            <column name="estado_nuevo" type="VARCHAR(30)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="estado_label" type="VARCHAR(80)"/>
+            <column name="guia" type="VARCHAR(60)"/>
+            <column name="transportista" type="VARCHAR(120)"/>
+            <column name="motivo_cambio" type="VARCHAR(255)"/>
+            <column name="origen_cambio" type="VARCHAR(50)" defaultValue="SISTEMA_WEB"/>
+            <column name="usuario_responsable" type="VARCHAR(120)" defaultValue="Sistema"/>
+            <column name="detalles_json" type="LONGTEXT"/>
+            <column name="created_at" type="DATETIME" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="historico_pedidos" indexName="idx_hist_pedidos_pedido_id">
+            <column name="pedido_id"/>
+        </createIndex>
+        <createIndex tableName="historico_pedidos" indexName="idx_hist_pedidos_created_at">
+            <column name="created_at"/>
+        </createIndex>
+        <createIndex tableName="historico_pedidos" indexName="idx_hist_pedidos_estado">
+            <column name="estado_nuevo"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>
+
