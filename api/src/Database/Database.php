@@ -17,6 +17,37 @@ class Database {
     private function __construct() {}
     private function __clone() {}
 
+    private static function loadEnv(): void {
+        $envPaths = [
+            __DIR__ . '/../../../.env',
+            __DIR__ . '/../../.env',
+            dirname(__DIR__, 3) . '/.env',
+            dirname(__DIR__, 2) . '/.env',
+        ];
+
+        foreach ($envPaths as $path) {
+            if (file_exists($path)) {
+                $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+                foreach ($lines as $line) {
+                    $line = trim($line);
+                    if ($line === '' || str_starts_with($line, '#')) {
+                        continue;
+                    }
+                    if (str_contains($line, '=')) {
+                        [$key, $val] = explode('=', $line, 2);
+                        $key = trim($key);
+                        $val = trim(trim($val), '"\'');
+                        if (!isset($_ENV[$key])) {
+                            $_ENV[$key] = $val;
+                            putenv("{$key}={$val}");
+                        }
+                    }
+                }
+                break;
+            }
+        }
+    }
+
     public static function getConnection(): PDO {
         if (self::$instance !== null) {
             return self::$instance;
@@ -27,13 +58,14 @@ class Database {
             throw new RuntimeException("Maraña Crochet requiere PHP 8.1 o superior. Versión actual: " . PHP_VERSION);
         }
 
-        $host = $_ENV['DB_HOST'] ?? '127.0.0.1';
-        $port = $_ENV['DB_PORT'] ?? '3306';
-        $user = $_ENV['DB_USER'] ?? 'root';
-        $pass = $_ENV['DB_PASS'] ?? '';
-        $name = $_ENV['DB_NAME'] ?? 'marana_crochet';
+        self::loadEnv();
 
-        $dsn = "mysql:host={$host};port={$port};charset=utf8mb4";
+        $host = $_ENV['DB_HOST'] ?? getenv('DB_HOST') ?: '127.0.0.1';
+        $port = (string)($_ENV['DB_PORT'] ?? getenv('DB_PORT') ?: '3307');
+        $user = $_ENV['DB_USER'] ?? getenv('DB_USER') ?: 'root';
+        $pass = $_ENV['DB_PASS'] ?? getenv('DB_PASS') ?: '';
+        $name = $_ENV['DB_NAME'] ?? getenv('DB_NAME') ?: 'marana_crochet';
+
         $options = [
             PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
@@ -41,9 +73,34 @@ class Database {
             PDO::ATTR_PERSISTENT         => false,
         ];
 
+        // Intentos de conexión: configuración prioritaria seguida de puertos y credenciales comunes de XAMPP
+        $connectionAttempts = [
+            ['port' => $port, 'pass' => $pass],
+            ['port' => '3307', 'pass' => ''],
+            ['port' => '3306', 'pass' => 'root'],
+            ['port' => '3306', 'pass' => ''],
+        ];
+
+        $pdo = null;
+        $lastException = null;
+
+        foreach ($connectionAttempts as $attempt) {
+            $currentPort = $attempt['port'];
+            $currentPass = $attempt['pass'];
+            $dsn = "mysql:host={$host};port={$currentPort};charset=utf8mb4";
+            try {
+                $pdo = new PDO($dsn, $user, $currentPass, $options);
+                break;
+            } catch (PDOException $e) {
+                $lastException = $e;
+            }
+        }
+
+        if ($pdo === null) {
+            throw new RuntimeException("Error al conectar con la base de datos MySQL en XAMPP: " . ($lastException ? $lastException->getMessage() : 'Desconocido'), (int)($lastException ? $lastException->getCode() : 0), $lastException);
+        }
+
         try {
-            $pdo = new PDO($dsn, $user, $pass, $options);
-            
             // Asegurar base de datos y conjunto de caracteres utf8mb4
             $pdo->exec("CREATE DATABASE IF NOT EXISTS `{$name}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
             $pdo->exec("USE `{$name}`");
