@@ -6,3 +6,10 @@ coverage/
 *.log
 .env*
 !.env.example
+api/vendor
+
+api/vendor/
+vendor/
+node_modules/
+test-results/
+cookie.txt
